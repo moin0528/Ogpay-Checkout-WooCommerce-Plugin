@@ -1,4 +1,4 @@
-# moin0528
+# Ogpay Checkout
 
 Introduction
 Plugin Name : Ogpay Checkout
@@ -38,5 +38,5 @@ Step 2: Tick to enable the module and Enter your Merchant ID & required Keys
 Output #back to top
 Go to Checkout Page
 
-Support #back to top
+Support
 If you have any questions that are beyond the scope of this help file, please feel free email us at moin528@gmail.com
