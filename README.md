@@ -1,4 +1,4 @@
-# Ogpay Checkout
+# Ogpay Checkout WooCommerce Pluign
 
 Introduction
 Plugin Name : Ogpay Checkout
