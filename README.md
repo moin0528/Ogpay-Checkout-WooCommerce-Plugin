@@ -3,7 +3,8 @@
 Introduction
 Plugin Name : Ogpay Checkout
 Item Version : v 1.0
-Website: https://pay-it.mobi/payitcheckout/Ogpay-woocommerce-online-documentation/
+Checkout Documentation Website: https://pay-it.mobi/payitcheckout/
+WooCommerce Setup Documentation Website: https://pay-it.mobi/payitcheckout/Ogpay-woocommerce-online-documentation/
 
 First of all, Thank you so much for using Ogpay Checkout Services.
 
