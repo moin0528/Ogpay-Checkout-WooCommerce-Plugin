@@ -112,7 +112,7 @@ class WC_Gateway_OneGlobal extends WC_Payment_Gateway {
 		$currency = $this->paymentCurrencyKent;
 		$isysid = date( "Ymd" ) . rand( 1, 100000 ) . $order_id;
 		$amount = $order->get_total();
-		$description = $names;
+		$description = "";
 		$language = $this->paymentLanguage;
 		$country = $this->paymentCountry;
 		$merchant_name = $this->paymentMechantName;
