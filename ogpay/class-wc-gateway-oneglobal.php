@@ -37,6 +37,7 @@ class WC_Gateway_OneGlobal extends WC_Payment_Gateway {
 		$this->enable_for_virtual = $this->get_option( 'enable_for_virtual', 'yes' ) === 'yes';
 		add_action( 'woocommerce_update_options_payment_gateways_' . $this->id, array( $this, 'process_admin_options' ) );
 		add_action( 'woocommerce_thankyou_' . $this->id, array( $this, 'thankyou_page' ) );
+		add_action( 'woocommerce_api_' . $this->id , array( $this, 'oneglobalCallback' ) );
 		add_filter( 'woocommerce_payment_complete_order_status', array( $this, 'change_payment_complete_order_status' ), 10, 3 );
 		add_action( 'woocommerce_email_before_order_table', array( $this, 'email_instructions' ), 10, 3 );
 	}
@@ -81,7 +82,6 @@ class WC_Gateway_OneGlobal extends WC_Payment_Gateway {
 		$order = wc_get_order( $order_id );
 		$names = '';
 
-
 		foreach ( $order->get_items() as $item_id => $item_data ) {
 			if(isset($item_data['name'])){
 				$names .= $item_data['name'] . " and ";
@@ -108,29 +108,34 @@ class WC_Gateway_OneGlobal extends WC_Payment_Gateway {
 			$channelName = $this->paymentChannel1;
 			$paymentchannel = $this->paymentChannelKent;
 		}
+		
+		
 		$tunnel = $this->paymentTunnelKent;
 		$currency = $this->paymentCurrencyKent;
+		$scurrency =get_woocommerce_currency();
 		$isysid = date( "Ymd" ) . rand( 1, 100000 ) . $order_id;
 		$amount = $order->get_total();
-		$description = "";
+		$description = "Sample";
 		$language = $this->paymentLanguage;
 		$country = $this->paymentCountry;
 		$merchant_name = $this->paymentMechantName;
 		$akey = $this->paymentAuthKey;
 		$timestamp = time();
 		$rnd = "";
+		$msisdn="";
 		$original = $this->paymentEncryptedSaltEncript;
-		$dataToComputeHash = $paymentchannel . "paymentchannel" . $isysid . "isysid" . $amount . "amount" . $timestamp . "timestamp" . $description . "description" . $rnd . "rnd" . $original . "original";
-
+		
+		$dataToComputeHash = $paymentchannel . "paymentchannel" . $isysid . "isysid" . $amount . "amount" . $timestamp . "timestamp" . $description . "description" . $rnd . "rnd" . $original . "original". $msisdn . "msisdn" . $currency . "currency" . $tunnel . "tunnel" . $scurrency . "scurrency";
+		
 		$decryptedOriginal = $this->paymentEncryptedSaltDecrypt;
 		$hash = strtoupper( hash_hmac( "sha256", $dataToComputeHash, $decryptedOriginal ) );
 		add_post_meta( $order_id, 'hash', $hash );
 		add_post_meta( $order_id, 'channelName', $channelName );
 		add_post_meta( $order_id, 'hash', $hash );
-		$merchantResponseUrl = site_url() . "/wp-content/plugins/ogpay/return.php";
-		$host = "https://pay-it.mobi/globalpayit/pciglobal/WebForms/Payitcheckoutservice%20.aspx";
+		$merchantResponseUrl = WC()->api_request_url( 'oneglobal' );
+		$host = "https://pay-it.mobi/globalpayit/pciglobal/WebForms/Payitcheckoutservice2.aspx";
 
-		$url = $host . "?country=" . $country . "&paymentchannel=" . $paymentchannel . "&isysid=" . $isysid . "&amount=" . $amount . "&tunnel=" . $tunnel . "&description=" . $description . "&description2=" . $description2 . "&currency=" . $currency . "&Responseurl=" . $merchantResponseUrl . "&merchant_name=" . $merchant_name . "&akey=" . $akey . "&hash=" . $hash . "&original=" . $original . "&timestamp=" . $timestamp . "&rnd=" . $rnd;
+		$url = $host . "?country=" . $country . "&paymentchannel=" . $paymentchannel . "&isysid=" . $isysid . "&amount=" . $amount . "&tunnel=" . $tunnel . "&description=" . $description . "&description2=" . $description2 . "&currency=" . $currency  . "&Responseurl=" . $merchantResponseUrl . "&merchant_name=" . $merchant_name . "&akey=" . $akey . "&hash=" . $hash . "&original=" . urlencode($original) . "&timestamp=" . $timestamp . "&rnd=" . $rnd . "&scurrency=" .$scurrency . "&msisdn=" .$msisdn;
 
 		return array( 'result' => 'success', 'redirect' => $url, );
 	}
@@ -140,6 +145,67 @@ class WC_Gateway_OneGlobal extends WC_Payment_Gateway {
 		$icon_html .= '<img src="' . site_url() . '/wp-content/plugins/ogpay/images/logo.png" style="height:31px!important; width:100px!important;" alt="' . esc_attr__( 'One Global Payment', 'woocommerce' ) . '" />';
 		return apply_filters( 'woocommerce_gateway_icon', $icon_html, $this->id );
 	}
+	
+	public function oneglobalCallback($order) { 
+		global $woocommerce, $post;
+		if (isset($_GET[ 'isysid' ])) {
+		  //$OneGlobal = new WC_Gateway_OneGlobal();
+		  //global $woocommerce;
+		  $woo_order_id = substr( $_GET[ 'isysid' ], 13 );
+		  $chk = get_post_meta( $woo_order_id, 'payment_order_id', true );
+		  if ( $chk <= 0 ) {
+			$order = wc_get_order( $woo_order_id );
+			$all_gateways = WC()->payment_gateways->payment_gateways();
+			$allowed_gateways = ! empty( $all_gateways['oneglobal'] ) ? $all_gateways['oneglobal'] : '';
+			$settings = $allowed_gateways->settings;
+
+			$master_IV = $settings['paymentMasterIV'];
+
+			$dataToComputeHash = $master_IV . "isysid=" . $_GET[ 'isysid' ] . "&result=" . urlencode( $_GET[ 'result' ] ) . $master_IV;
+			$computedHash = strtoupper( hash_hmac( "sha256", $dataToComputeHash, $OneGlobal->paymentEncryptedSaltDecrypt ) );
+
+			$note = "";
+			if ( $computedHash == $_GET[ 'hash' ] ) {
+
+			  if ( strtolower( $_GET[ 'result' ] ) == 'captured' ) {
+				$order->update_status( 'processing', 'order_note' );
+				$order->payment_complete();
+			  } elseif ( strtolower( $_GET[ 'result' ] ) == 'cancelled' ) {
+				$order->update_status( 'cancelled', 'order_note' );
+			  } else {
+				$order->update_status( 'pending', 'order_note' );
+			  }
+
+			  add_post_meta( $woo_order_id, 'payment_order_id', $_GET[ 'isysid' ] );
+			  add_post_meta( $woo_order_id, 'payment_result', $_GET[ 'result' ] );
+
+			  $channelName = get_post_meta( $woo_order_id, 'channelName', true );
+			  $note = "Ref No : " . $_GET[ 'isysid' ] . ", Channel Name : " . $channelName . ", Payment Status : " . $_GET[ 'result' ];
+			} else {
+
+			  add_post_meta( $woo_order_id, 'payment_order_id', $_GET[ 'isysid' ] );
+			  add_post_meta( $woo_order_id, 'payment_result', $_GET[ 'result' ] );
+
+			  $order->update_status( 'pending', 'order_note' );
+			  $note = "Tampered Data";
+			}
+			$order->add_order_note( $note );
+			$woocommerce->cart->empty_cart();
+            $url = $this->get_return_url( $order );	
+			wp_redirect( $url );
+			exit;
+		  } else {
+			$url = wc_get_checkout_url();
+			wp_redirect( esc_url( $url ) );
+			exit;
+		  }
+		} else {
+			$url = wc_get_checkout_url();
+			wp_redirect( esc_url( $url ) );
+			exit;
+		}		
+	}
+	
 	public
 	function thankyou_page() {
 		if ( $this->instructions ) {
@@ -152,10 +218,14 @@ class WC_Gateway_OneGlobal extends WC_Payment_Gateway {
 		echo '<fieldset id="wc-' . esc_attr( $this->id ) . '-cc-form" class="wc-credit-card-form wc-payment-form" style="background:transparent;">';
 		echo '<div class="form-row form-row-wide">
 							<label>Choose Method <span class="required">*</span></label>
-							<select name="payment_type">
+							<select name="payment_type" style="width: 100%;">
 							<option value="kent">' . $this->paymentChannel1 . '</option>
-							<option value="visa">' . $this->paymentChannel2 . '</option>
+							
 								';
+		
+			if ( $this->paymentChannel2 != '' ) {
+			echo '<option value="visa">' . $this->paymentChannel2 . '</option>';
+		}
 		if ( $this->paymentChannel3 != '' ) {
 			echo '<option value="code3">' . $this->paymentChannel3 . '</option>';
 		}

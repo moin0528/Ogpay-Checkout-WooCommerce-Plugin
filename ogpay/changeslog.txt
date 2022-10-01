@@ -1,0 +1,11 @@
+Og Pay WooCommerce
+---
+Date: Sept 28, 2022
+Changes By: Og Team
+Major changes in the response URL and compatibility with the latest WordPress functions.
+
+Sample Code
+------------------------
+Old code - $merchantResponseUrl = site_url() . "/wp-content/plugins/ogpay/return.php";
+New code - $merchantResponseUrl = WC()->api_request_url( 'oneglobal' );
+---------

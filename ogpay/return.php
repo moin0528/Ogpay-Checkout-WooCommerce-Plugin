@@ -39,6 +39,9 @@ if ( isset( $_GET[ 'isysid' ] ) ) {
       $note = "Ref No : " . $_GET[ 'isysid' ] . ", Channel Name : " . $channelName . ", Payment Status : " . $_GET[ 'result' ];
     } else {
 
+      add_post_meta( $woo_order_id, 'payment_order_id', $_GET[ 'isysid' ] );
+      add_post_meta( $woo_order_id, 'payment_result', $_GET[ 'result' ] );
+
       $order->update_status( 'pending', 'order_note' );
       $note = "Tampered Data";
     }

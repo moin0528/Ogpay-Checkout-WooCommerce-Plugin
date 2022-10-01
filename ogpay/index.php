@@ -2,7 +2,7 @@
 /* @wordpress-plugin
  * Plugin Name:       Og Pay for Woocommerce
  * Description:       Supercharge your business with Og Pay
- * Version:           1.0.0
+ * Version:           2.1.0
  * WC requires at least: 2.6
  * WC tested up to: 3.6
  * Author:            Og Business by One Global
@@ -52,7 +52,11 @@ function bbloomer_add_content_thankyou( $order_id ) {
 		margin-bottom: 1rem;
 	}
 	</style>
-	<div class="payment-details"><h2>Payment Details</h2><div id="payment-id" style=""><strong>Payment ID : </strong> ' . get_post_meta( $order_id, 'payment_order_id', true ) . '</div><div id="payment-status"><strong>Payment Status : </strong> ' . get_post_meta( $order_id, 'payment_result', true ) . '</div></div><br/>';
+	<div class="payment-details"><h2>Payment Details</h2>
+	<div id="payment-id" style=""><strong>Payment ID : </strong> '
+    . get_post_meta( $order_id, 'payment_order_id', true ) . '</div>
+	  <div id="payment-status"><strong>Payment Status : </strong> '
+  . get_post_meta( $order_id, 'payment_result', true ) . '</div></div><br/>';
 }
 
 ?>
